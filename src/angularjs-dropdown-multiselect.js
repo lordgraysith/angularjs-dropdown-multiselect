@@ -56,7 +56,7 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
             },
             link: function ($scope, $element, $attrs) {
                 var $dropdownTrigger = $element.children()[0];
-                
+
                 $scope.toggleDropdown = function () {
                     $scope.open = !$scope.open;
                 };
@@ -93,7 +93,8 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
                     groupBy: $attrs.groupBy || undefined,
                     groupByTextProvider: null,
                     smartButtonMaxItems: 0,
-                    smartButtonTextConverter: angular.noop
+                    smartButtonTextConverter: angular.noop,
+                    checkAllExclude: angular.noop
                 };
 
                 $scope.texts = {
@@ -226,28 +227,30 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
 
                 $scope.selectAll = function () {
                     $scope.deselectAll(false);
-                    $scope.externalEvents.onSelectAll();
 
                     angular.forEach($scope.options, function (value) {
-                        $scope.setSelectedItem(value[$scope.settings.idProp], true);
+                        if ($scope.settings.checkAllExclude(value)) return;
+                        $scope.setSelectedItem(value[$scope.settings.idProp], true, true);
                     });
+                    $scope.externalEvents.onSelectAll();
                 };
 
                 $scope.deselectAll = function (sendEvent) {
-                    sendEvent = sendEvent || true;
-
-                    if (sendEvent) {
-                        $scope.externalEvents.onDeselectAll();
-                    }
+                    if (typeof sendEvent !== 'boolean')
+                        sendEvent = true;
 
                     if ($scope.singleSelection) {
                         clearObject($scope.selectedModel);
                     } else {
                         $scope.selectedModel.splice(0, $scope.selectedModel.length);
                     }
+
+                    if (sendEvent) {
+                        $scope.externalEvents.onDeselectAll();
+                    }
                 };
 
-                $scope.setSelectedItem = function (id, dontRemove) {
+                $scope.setSelectedItem = function (id, dontRemove, suppressEvent) {
                     var findObj = getFindObj(id);
                     var finalObj = null;
 
@@ -260,7 +263,8 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
                     if ($scope.singleSelection) {
                         clearObject($scope.selectedModel);
                         angular.extend($scope.selectedModel, finalObj);
-                        $scope.externalEvents.onItemSelect(finalObj);
+                        if (!suppressEvent)
+                            $scope.externalEvents.onItemSelect(finalObj);
                         if ($scope.settings.closeOnSelect) $scope.open = false;
 
                         return;
@@ -272,10 +276,12 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
 
                     if (!dontRemove && exists) {
                         $scope.selectedModel.splice(_.findIndex($scope.selectedModel, findObj), 1);
-                        $scope.externalEvents.onItemDeselect(findObj);
+                        if (!suppressEvent)
+                            $scope.externalEvents.onItemDeselect(findObj);
                     } else if (!exists && ($scope.settings.selectionLimit === 0 || $scope.selectedModel.length < $scope.settings.selectionLimit)) {
                         $scope.selectedModel.push(finalObj);
-                        $scope.externalEvents.onItemSelect(finalObj);
+                        if (!suppressEvent)
+                            $scope.externalEvents.onItemSelect(finalObj);
                     }
                     if ($scope.settings.closeOnSelect) $scope.open = false;
                 };
