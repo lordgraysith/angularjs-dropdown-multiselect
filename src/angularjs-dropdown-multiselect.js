@@ -36,7 +36,7 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
                     template += '<li role="presentation" ng-repeat="option in options | filter: searchFilter">';
                 }
 
-                template += '<a role="menuitem" tabindex="-1" ng-click="setSelectedItem(getPropertyForObject(option,settings.idProp))">';
+                template += '<a class="{{getPropertyForObject(option, settings.classProp)}}" role="menuitem" tabindex="-1" ng-click="setSelectedItem(getPropertyForObject(option,settings.idProp))">';
 
                 if (checkboxes) {
                     template += '<div class="checkbox"><label><input class="checkboxInput" type="checkbox" ng-click="checkboxClick($event, getPropertyForObject(option,settings.idProp))" ng-checked="isChecked(getPropertyForObject(option,settings.idProp))" /> {{getPropertyForObject(option, settings.displayProp)}}</label></div></a>';
@@ -81,6 +81,7 @@ directiveModule.directive('ngDropdownMultiselect', ['$filter', '$document', '$co
                     scrollableHeight: '300px',
                     closeOnBlur: true,
                     displayProp: 'label',
+                    classProp: 'styleClass',
                     idProp: 'id',
                     externalIdProp: 'id',
                     enableSearch: false,
